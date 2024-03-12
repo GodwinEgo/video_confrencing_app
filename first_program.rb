@@ -1,34 +1,22 @@
-def calculate_average
-  sum = 0.0
-  count = 0
+require 'sinatra'
+require 'nokogiri'
+require 'httparty'
 
-  loop do
-    puts "Enter a number (or 'exit' to finish):"
-    input = gets.chomp
-
-    if input.downcase == 'exit'
-      break
-    end
-
-    unless valid_number?(input)
-      puts "Invalid input. Please enter a number."
-      break
-    end
-
-    sum += input.to_f
-    count += 1
+class Scraper
+  def initialize(url, css_selector)
+    @url = url
+    @css_selector = css_selector
   end
 
-  if count > 0
-    average = sum / count
-    puts "The average is #{average}"
-  else
-    puts "No numbers were entered."
+  def scrape
+    unparsed_page = HTTParty.get(@url)
+    parsed_page = Nokogiri::HTML(unparsed_page)
+    parsed_page.css(@css_selector)
   end
 end
 
-def valid_number?(str)
-  Float(str) != nil rescue false
+get "/" do
+  scraper = Scraper.new("https://www.bbc.co.uk/news", "h3")
+  @data = scraper.scrape.map(&:text)
+  erb :index
 end
-
-calculate_average
